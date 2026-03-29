@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>StaffingAgent.ai — Timesheet Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+      --subtle: #94a3b8;
+      --red: #dc2626; --red-bg: #fef2f2; --red-border: #fecaca;
+      --amber: #d97706; --amber-bg: #fffbeb; --amber-border: #fde68a;
+      --green: #16a34a; --green-bg: #f0fdf4; --green-border: #bbf7d0;
+      --blue: #2563eb; --blue-bg: #eff6ff; --blue-border: #bfdbfe;
+      --radius: 8px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column}
+    /* ── TOP BAR ─────────────────────────────────────────────────────────── */
+    .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;gap:16px;height:56px;flex-shrink:0}
+    .logo{font-weight:700;font-size:15px;color:#0f172a;letter-spacing:-0.01em;white-space:nowrap}
+    .logo span{color:#2563eb}
+    .topbar-divider{width:1px;height:24px;background:var(--border)}
+    .stat-chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{font-size:12px;font-weight:500;padding:4px 10px;border-radius:999px;white-space:nowrap}
+    .chip.red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+    .chip.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+    .chip.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+    .chip.blue{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+    .chip.gray{background:#f1f5f9;color:var(--muted);border:1px solid var(--border)}
+    .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+    .week-label{font-size:13px;color:var(--muted)}
+    .progress-label{font-size:13px;font-weight:600;color:var(--text)}
+    .load-btn{font-size:12px;font-weight:500;padding:6px 12px;background:#f1f5f9;border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--text)}
+    .load-btn:hover{background:#e2e8f0}
+    .load-btn input{display:none}
+    /* ── LAYOUT ───────────────────────────────────────────────────────────── */
+    .layout{display:flex;flex:1;min-height:0}
+    /* ── QUEUE SIDEBAR ────────────────────────────────────────────────────── */
+    .queue{width:296px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto;background:var(--surface)}
+    .queue-section{padding:8px 0}
+    .queue-section-title{font-size:11px;font-weight:600;color:var(--subtle);text-transform:uppercase;letter-spacing:0.07em;padding:10px 14px 6px}
+    .qcard{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+    .qcard:hover{background:#f8fafc}
+    .qcard.active{background:#eff6ff;border-left:3px solid #2563eb}
+    .qcard.active-red{background:var(--red-bg);border-left:3px solid var(--red)}
+    .qcard.active-amber{background:var(--amber-bg);border-left:3px solid var(--amber)}
+    .qcard.active-green{background:var(--green-bg);border-left:3px solid var(--green)}
+    .qcard .qname{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
+    .qcard .qrole{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .qcard .qissue{font-size:12px;color:var(--text);margin-top:4px;line-height:1.4}
+    .qcard .qmoney{font-size:12px;font-weight:600;margin-top:4px}
+    .qcard .qdecision{font-size:11px;color:var(--green);margin-top:4px;font-weight:500}
+    .status-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:0.05em}
+    .status-pill.critical{background:var(--red-bg);color:var(--red)}
+    .status-pill.warning{background:var(--amber-bg);color:var(--amber)}
+    .status-pill.clean{background:var(--green-bg);color:var(--green)}
+    .status-pill.missing{background:var(--blue-bg);color:var(--blue)}
+    /* ── DETAIL PANEL ─────────────────────────────────────────────────────── */
+    .detail{flex:1;overflow-y:auto;padding:24px 28px;background:var(--bg)}
+    .detail-placeholder{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:15px}
+    /* Banner */
+    .banner{border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+    .banner.critical{background:var(--red-bg);border:1px solid var(--red-border)}
+    .banner.warning{background:var(--amber-bg);border:1px solid var(--amber-border)}
+    .banner.clean{background:var(--green-bg);border:1px solid var(--green-border)}
+    .banner.missing{background:var(--blue-bg);border:1px solid var(--blue-border)}
+    .banner-icon{font-size:20px;flex-shrink:0}
+    .banner-body{}
+    .banner-title{font-size:15px;font-weight:700}
+    .banner-title.critical{color:var(--red)}
+    .banner-title.warning{color:var(--amber)}
+    .banner-title.clean{color:var(--green)}
+    .banner-title.missing{color:var(--blue)}
+    .banner-sub{font-size:13px;color:var(--muted);margin-top:2px}
+    /* Record header */
+    .rec-header{margin-bottom:16px}
+    .rec-header h1{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px}
+    .rec-meta{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px}
+    .rec-meta span::before{content:"·";margin-right:8px;color:var(--subtle)}
+    .rec-meta span:first-child::before{display:none}
+    /* Sections */
+    .section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:14px}
+    .section-h{font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+    .section-h .icon{font-size:15px}
+    .section p{font-size:14px;color:var(--text);line-height:1.6}
+    .section p.muted{color:var(--muted)}
+    /* Comparison table */
+    .cmp-table{width:100%;border-collapse:collapse;font-size:13px}
+    .cmp-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);padding:8px 10px;border-bottom:2px solid var(--border);text-align:left}
+    .cmp-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+    .cmp-table tr:last-child td{border-bottom:none}
+    .cmp-table tr.diff{background:#fffbeb}
+    .cmp-table tr.diff td:first-child{font-weight:600}
+    .cmp-table .diff-badge{background:var(--amber-bg);color:var(--amber);font-weight:600;font-size:12px;padding:2px 8px;border-radius:4px;border:1px solid var(--amber-border)}
+    .cmp-table .ok-badge{color:var(--green);font-size:13px}
+    /* Discrepancy list */
+    .disc-list{display:flex;flex-direction:column;gap:6px}
+    .disc-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text);padding:8px 10px;background:#fffbeb;border:1px solid var(--amber-border);border-radius:6px;line-height:1.5}
+    .disc-item .disc-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+    .disc-none{font-size:13px;color:var(--green);padding:8px 10px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:6px}
+    /* Compliance */
+    .comp-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text);padding:10px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;line-height:1.5}
+    .comp-item .comp-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+    .comp-none{font-size:13px;color:var(--muted);font-style:italic}
+    /* Confidence */
+    .confidence-row{display:flex;align-items:center;gap:12px}
+    .conf-bar-wrap{flex:1;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+    .conf-bar{height:100%;border-radius:4px}
+    .conf-label{font-size:13px;font-weight:600;min-width:70px}
+    .conf-label.high{color:var(--green)}
+    .conf-label.medium{color:var(--amber)}
+    .conf-label.low{color:#ea580c}
+    .conf-label.verylow{color:var(--red)}
+    /* Actions */
+    .action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+    .btn{font-family:"Inter",sans-serif;font-size:13px;font-weight:600;padding:10px 18px;border-radius:var(--radius);border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+    .btn-approve{background:var(--green);color:#fff}
+    .btn-approve:hover{background:#15803d}
+    .btn-reject{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+    .btn-reject:hover{background:var(--red-bg)}
+    .btn-escalate{background:#fff;color:var(--amber);border:1.5px solid var(--amber-border)}
+    .btn-escalate:hover{background:var(--amber-bg)}
+    /* Toast */
+    .toast{position:fixed;bottom:20px;right:20px;background:#1e293b;color:#fff;padding:10px 16px;border-radius:var(--radius);font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:999}
+    .toast.show{opacity:1}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">Staffing<span>Agent</span>.ai</div>
+    <div class="topbar-divider"></div>
+    <div class="stat-chips" id="statChips"></div>
+    <div class="topbar-right">
+      <span class="week-label" id="weekLabel"></span>
+      <div class="topbar-divider"></div>
+      <span class="progress-label" id="progressLabel"></span>
+      <label class="load-btn" title="Load a fresh reconciliation_results.json">
+        Load Results <input type="file" accept=".json" id="fileInput"/>
+      </label>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="queue" id="queue"></aside>
+    <main class="detail" id="detail">
+      <div class="detail-placeholder">Select a record from the list on the left to review it.</div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  // ── DATA ──────────────────────────────────────────────────────────────────
+  let DATA = /*__RECON_DATA_START__*/[{"placement_id":"PL-1001","candidate_name":"Maria Santos","vms_platform":"Fieldglass","client_name":"Cross Country Healthcare","ats_state":"FL","ats_job_title":"RN - Med/Surg","week_ending":"2026-03-21","match_status":"match","confidence_score":1.0,"requires_human_review":false,"severity":"clean","discrepancies":[],"vms_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":85.0,"ot_rate":127.5,"per_diem":75.0,"total":3475.0,"po_number":"PO-CC-2024-4451","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":85.0,"ot_rate":127.5,"per_diem":75.0,"total":3475.0,"po_number":"PO-CC-2024-4451","pay_rate":42.0},"financial_impact":0.0,"name_similarity_score":100,"compliance_flags":[],"llm_explanation":"","recommended_action":"No action required \u2014 record cleared for processing.","risk_level":"LOW","escalation_note":""},{"placement_id":"PL-1002","candidate_name":"James Wright","vms_platform":"Fieldglass","client_name":"Cross Country Healthcare","ats_state":"FL","ats_job_title":"RN - ICU","week_ending":"2026-03-21","match_status":"mismatch","confidence_score":0.55,"requires_human_review":true,"severity":"warning","discrepancies":["Hours mismatch: VMS=36.0h vs ATS=40.0h","OT hours mismatch: VMS=4.0h vs ATS=0.0h","Total amount mismatch: VMS=$3,864.00 vs ATS=$3,680.00 (diff=$184.00)"],"vms_snapshot":{"hours":36.0,"ot_hours":4.0,"bill_rate":92.0,"ot_rate":138.0,"per_diem":0.0,"total":3864.0,"po_number":"PO-CC-2024-4452","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":92.0,"ot_rate":138.0,"per_diem":0.0,"total":3680.0,"po_number":"PO-CC-2024-4452","pay_rate":45.0},"financial_impact":184.0,"name_similarity_score":100,"compliance_flags":[],"llm_explanation":"The VMS (Fieldglass) shows James Wright worked 36 regular hours and 4 overtime hours totaling $3,864.00, while the ATS (Bullhorn) recorded 40 regular hours with no overtime totaling $3,680.00. Although the total hours are the same (40h), the classification of 4 hours as overtime in the VMS versus straight time in the ATS creates a $184.00 billing difference, which will result in either an overbill to the client or an underpayment to the candidate if not corrected prior to invoicing.","recommended_action":"Pull James Wright's approved timesheet from Fieldglass and cross-reference with the shift schedule and any applicable OT threshold rules for the FL ICU placement under Cross Country Healthcare. Confirm whether hours 37-40 should be classified as OT per the client contract and state labor guidelines, then update the ATS record in Bullhorn to match the approved VMS record before generating the invoice against PO-CC-2024-4452.","risk_level":"HIGH","escalation_note":"The Middle-Office Reconciliation Specialist must engage the Account Manager for Cross Country Healthcare to confirm the correct OT threshold and classification rules in the client contract. If the VMS-approved record stands, Bullhorn must be corrected to reflect 36 regular hours and 4 OT hours. Payroll should also be notified to ensure James Wright is compensated at the correct OT rate before the pay run closes for the week ending 2026-03-21."},{"placement_id":"PL-1003","candidate_name":"Sarah Chen","vms_platform":"Beeline","client_name":"General Healthcare Resources","ats_state":"TX","ats_job_title":"LPN","week_ending":"2026-03-21","match_status":"match","confidence_score":1.0,"requires_human_review":false,"severity":"clean","discrepancies":[],"vms_snapshot":{"hours":40.0,"ot_hours":8.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":75.0,"total":4517.0,"po_number":"PO-GHR-2026-1189","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":8.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":75.0,"total":4517.0,"po_number":"PO-GHR-2026-1189","pay_rate":38.5},"financial_impact":0.0,"name_similarity_score":100,"compliance_flags":[],"llm_explanation":"","recommended_action":"No action required \u2014 record cleared for processing.","risk_level":"LOW","escalation_note":""},{"placement_id":"PL-1004","candidate_name":"Robert Kim","vms_platform":"Beeline","client_name":"General Healthcare Resources","ats_state":"TX","ats_job_title":"LPN","week_ending":"2026-03-21","match_status":"mismatch","confidence_score":0.65,"requires_human_review":true,"severity":"warning","discrepancies":["Hours mismatch: VMS=32.0h vs ATS=40.0h","Total amount mismatch: VMS=$2,887.00 vs ATS=$3,215.00 (diff=$328.00)"],"vms_snapshot":{"hours":32.0,"ot_hours":0.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":75.0,"total":2887.0,"po_number":"PO-GHR-2026-1190","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":75.0,"total":3215.0,"po_number":"PO-GHR-2026-1190","pay_rate":38.5},"financial_impact":328.0,"name_similarity_score":100,"compliance_flags":[],"llm_explanation":"The VMS (Beeline) shows Robert Kim worked 32.0 regular hours for the week ending 2026-03-21, while the ATS (Bullhorn) reflects 40.0 regular hours \u2014 an 8-hour discrepancy that results in a $328.00 billing difference ($2,887.00 vs $3,215.00). This mismatch likely stems from either a timesheet correction made in Beeline after the ATS was updated, a missed punch or supervisor adjustment on the client side, or a data entry error in Bullhorn. Invoicing at the wrong amount risks either overbilling the client or underpaying the contractor, both of which carry financial and compliance risk.","recommended_action":"Place this record on billing hold immediately. The middle-office team should pull the approved timesheet directly from Beeline and compare it against the candidate's submitted timesheet in Bullhorn. If the client-approved VMS figure of 32.0 hours is confirmed correct, update Bullhorn to reflect 32.0 hours and adjust the total to $2,887.00 before generating the invoice. If there is reason to believe 40.0 hours is correct, obtain written approval from the client contact at General Healthcare Resources to override the Beeline record before proceeding.","risk_level":"HIGH","escalation_note":"The assigned middle-office reconciliation specialist must review this with the General Healthcare Resources client account manager to confirm which hour count is authoritative. Because the VMS-approved figure governs the client invoice, the Beeline approval of 32.0 hours should be treated as the source of truth unless the client account manager provides documented authorization to bill the higher amount. If contractor pay has already been processed at 40.0 hours, payroll must also be looped in to assess whether a pay adjustment or accrual is required."},{"placement_id":"PL-1005","candidate_name":"Angela Davis","vms_platform":"AYA","client_name":"TRIO Workforce Solutions","ats_state":"CA","ats_job_title":"RN - ER","week_ending":"2026-03-21","match_status":"mismatch","confidence_score":0.65,"requires_human_review":true,"severity":"warning","discrepancies":["Hours mismatch: VMS=38.0h vs ATS=40.0h","OT hours mismatch: VMS=2.0h vs ATS=0.0h","Total amount mismatch: VMS=$3,995.00 vs ATS=$3,900.00 (diff=$95.00)"],"vms_snapshot":{"hours":38.0,"ot_hours":2.0,"bill_rate":95.0,"ot_rate":142.5,"per_diem":100.0,"total":3995.0,"po_number":"PO-TRIO-8821","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":95.0,"ot_rate":142.5,"per_diem":100.0,"total":3900.0,"po_number":"PO-TRIO-8821","pay_rate":47.0},"financial_impact":95.0,"name_similarity_score":100,"compliance_flags":["CA DAILY OT RULE: California Labor Code requires overtime after 8 hours/day (not just 40h/week). VMS platform reports weekly totals only \u2014 cannot confirm daily OT was applied correctly. Manual verification required."],"llm_explanation":"The VMS (AYA) shows Angela Davis worked 38 regular hours and 2 overtime hours, while the ATS/Bullhorn records 40 regular hours and 0 overtime hours. Although the total worked hours are the same (40h), the pay classification differs \u2014 OT hours bill at $142.50 vs $95.00, resulting in the VMS total being $95.00 higher than the ATS total, which represents the premium on those 2 OT hours.","recommended_action":"Contact the TRIO Workforce Solutions client or the facility manager to obtain the original approved timesheet for the week ending 2026-03-21 and confirm whether Angela Davis actually worked 2 hours of overtime. If OT is confirmed, update the ATS/Bullhorn record to reflect 38 regular hours and 2 OT hours and invoice at the VMS-approved total of $3,995.00. If no OT was worked, request a VMS correction before invoicing.","risk_level":"MEDIUM","escalation_note":"The middle-office reconciliation team lead should review this alongside the TRIO Workforce Solutions account manager to validate the approved timesheet. Because the VMS record carries an 'Approved' status under PO-TRIO-8821, the account manager must confirm whether client-side OT approval was obtained, as California labor law (CA DLSE overtime rules) may also have compliance implications for an ER RN working OT in this state."},{"placement_id":"PL-1006","candidate_name":"David Park","vms_platform":"AYA","client_name":"TRIO Workforce Solutions","ats_state":"CA","ats_job_title":"RN - ER","week_ending":"2026-03-21","match_status":"match","confidence_score":1.0,"requires_human_review":true,"severity":"warning","discrepancies":[],"vms_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":95.0,"ot_rate":142.5,"per_diem":100.0,"total":3900.0,"po_number":"PO-TRIO-8822","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":95.0,"ot_rate":142.5,"per_diem":100.0,"total":3900.0,"po_number":"PO-TRIO-8822","pay_rate":47.0},"financial_impact":0.0,"name_similarity_score":100,"compliance_flags":["CA DAILY OT RULE: California Labor Code requires overtime after 8 hours/day (not just 40h/week). VMS platform reports weekly totals only \u2014 cannot confirm daily OT was applied correctly. Manual verification required."],"llm_explanation":"Compliance rule triggered: CA DAILY OT RULE: California Labor Code requires overtime after 8 hours/day (not just 40h/week). VMS platform reports weekly totals only \u2014 cannot confirm daily OT was applied correctly. Manual verification required.","recommended_action":"Review the compliance flags for this record and resolve before invoicing.","risk_level":"MEDIUM","escalation_note":"Middle-office lead should review compliance flags."},{"placement_id":"PL-1007","candidate_name":"Jennifer Martinez","vms_platform":"Fieldglass","client_name":"Cross Country Healthcare","ats_state":"NY","ats_job_title":"RN - OR","week_ending":"2026-03-21","match_status":"mismatch","confidence_score":0.6000000000000001,"requires_human_review":true,"severity":"warning","discrepancies":["Bill rate mismatch: VMS=$110.00/hr vs ATS=$105.00/hr (diff=$5.00)","OT rate mismatch: VMS=$165.00/hr vs ATS=$157.50/hr","Total amount mismatch: VMS=$6,380.00 vs ATS=$6,090.00 (diff=$290.00)"],"vms_snapshot":{"hours":40.0,"ot_hours":12.0,"bill_rate":110.0,"ot_rate":165.0,"per_diem":0.0,"total":6380.0,"po_number":"PO-CC-2024-4453","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":12.0,"bill_rate":105.0,"ot_rate":157.5,"per_diem":0.0,"total":6090.0,"po_number":"PO-CC-2024-4453","pay_rate":52.0},"financial_impact":290.0,"name_similarity_score":100,"compliance_flags":["EXCESSIVE HOURS: 52.0 total hours in one week meets or exceeds 50h threshold \u2014 potential labor law violation. Requires supervisor approval before invoicing."],"llm_explanation":"The bill rate recorded in Bullhorn ($105.00/hr) does not match the approved VMS rate in Fieldglass ($110.00/hr), resulting in a $5.00/hr discrepancy that cascades into a misaligned OT rate ($157.50 vs $165.00) and a total invoice undercalculation of $290.00 for this single week. This matters financially because invoicing at the ATS rate would cause Cross Country Healthcare to underbill the client by $290.00, eroding margin, while invoicing at the VMS rate without internal alignment creates a reconciliation break that could trigger a payment dispute or compliance flag. The root cause is likely a rate update that was applied in Fieldglass after the original placement was entered in Bullhorn, or a manual entry error in the ATS at time of placement.","recommended_action":"Place this timecard on billing hold immediately. The middle-office team must pull the executed contract or rate card amendment for Placement PL-1007 and confirm the authoritative agreed-upon bill rate with the Account Manager and the Cross Country Healthcare client contact. Once the correct rate is confirmed, update the lower system to match, document the rate change with a timestamp and source reference, and rerun the reconciliation before releasing for invoicing.","risk_level":"HIGH","escalation_note":"This requires review by the assigned Account Manager for the Cross Country Healthcare account to confirm which bill rate ($105.00 or $110.00) reflects the current contractual agreement, and by the Contracts/Credentialing team to verify whether a rate amendment was executed and whether it was properly communicated to the ATS administrator. If the VMS-approved rate of $110.00 is correct, the ATS record must be corrected before invoicing to avoid a $290.00 revenue loss on this single timecard."},{"placement_id":"PL-1008","candidate_name":"Michael Thompson","vms_platform":"Beeline","client_name":"General Healthcare Resources","ats_state":"TX","ats_job_title":"CNA","week_ending":"2026-03-21","match_status":"missing","confidence_score":0.35,"requires_human_review":true,"severity":"critical","discrepancies":["Hours mismatch: VMS=0.0h vs ATS=40.0h","Total amount mismatch: VMS=$0.00 vs ATS=$3,140.00 (diff=$3,140.00)","VMS status: Missing Timesheet \u2014 no approved timesheet in VMS"],"vms_snapshot":{"hours":0.0,"ot_hours":0.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":0.0,"total":0.0,"po_number":"PO-GHR-2026-1191","status":"Missing Timesheet"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":0.0,"total":3140.0,"po_number":"PO-GHR-2026-1191","pay_rate":38.5},"financial_impact":3140.0,"name_similarity_score":100,"compliance_flags":["MISSING TIMESHEET: Worker has no approved timesheet in VMS. Cannot process payroll or invoice hospital until timesheet is submitted and approved."],"llm_explanation":"The VMS platform (Beeline) shows a missing timesheet for Michael Thompson's week ending 2026-03-21, resulting in zero hours and zero billing recorded on the VMS side, while Bullhorn reflects 40.0 regular hours worked totaling $3,140.00. This means the timesheet was either never submitted or never approved within Beeline, creating a $3,140.00 invoicing gap that cannot be billed to General Healthcare Resources until the VMS record is reconciled. Proceeding to invoice without an approved VMS timesheet risks non-payment, client disputes, and potential compliance violations under the agreed VMS-governed contract.","recommended_action":"Middle-office must contact Michael Thompson and/or his onsite supervisor at General Healthcare Resources to confirm hours were actually worked, then have the timesheet submitted and approved in Beeline before any invoice is generated. Do not invoice based solely on the ATS record; the approved VMS timesheet is the contractual source of truth for this client engagement and must reflect 40.0 regular hours with a final approved status prior to billing.","risk_level":"HIGH","escalation_note":"This requires immediate escalation to the assigned Middle-Office Reconciliation Specialist and the Client Services Manager overseeing the General Healthcare Resources account. The VMS Administrator for the Beeline platform should also be looped in to investigate whether the timesheet was submitted but stuck in an approval workflow, rejected, or never entered. If hours cannot be confirmed and approved in Beeline within the billing cycle window, the Finance/Billing team must be notified to hold the invoice for PO-GHR-2026-1191 to avoid a disputed or rejected billing."},{"placement_id":"PL-1009","candidate_name":"Lisa Wang","vms_platform":"AYA","client_name":"TRIO Workforce Solutions","ats_state":"CA","ats_job_title":"LVN","week_ending":"2026-03-21","match_status":"match","confidence_score":1.0,"requires_human_review":true,"severity":"warning","discrepancies":[],"vms_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":88.0,"ot_rate":132.0,"per_diem":75.0,"total":3595.0,"po_number":"PO-TRIO-8823","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":88.0,"ot_rate":132.0,"per_diem":75.0,"total":3595.0,"po_number":"PO-TRIO-8823","pay_rate":43.0},"financial_impact":0.0,"name_similarity_score":100,"compliance_flags":["CA DAILY OT RULE: California Labor Code requires overtime after 8 hours/day (not just 40h/week). VMS platform reports weekly totals only \u2014 cannot confirm daily OT was applied correctly. Manual verification required."],"llm_explanation":"Compliance rule triggered: CA DAILY OT RULE: California Labor Code requires overtime after 8 hours/day (not just 40h/week). VMS platform reports weekly totals only \u2014 cannot confirm daily OT was applied correctly. Manual verification required.","recommended_action":"Review the compliance flags for this record and resolve before invoicing.","risk_level":"MEDIUM","escalation_note":"Middle-office lead should review compliance flags."},{"placement_id":"PL-1010","candidate_name":"Thomas Brown","vms_platform":"Fieldglass","client_name":"Cross Country Healthcare","ats_state":"FL","ats_job_title":"RN - Med/Surg","week_ending":"2026-03-21","match_status":"mismatch","confidence_score":0.85,"requires_human_review":true,"severity":"warning","discrepancies":["Missing PO number on VMS record"],"vms_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":85.0,"ot_rate":127.5,"per_diem":75.0,"total":3475.0,"po_number":"MISSING","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":85.0,"ot_rate":127.5,"per_diem":75.0,"total":3475.0,"po_number":"PO-CC-2024-4460","pay_rate":42.0},"financial_impact":0.0,"name_similarity_score":100,"compliance_flags":[],"llm_explanation":"The VMS record in Fieldglass is missing the PO Number (PO-CC-2024-4460) that exists in Bullhorn, meaning the timesheet approval in Fieldglass is not linked to an authorized purchase order. This is a financial control risk because invoices submitted without a valid PO reference are commonly rejected by clients or delayed in accounts payable processing, which can disrupt cash flow and revenue recognition for the week ending 2026-03-21.","recommended_action":"The middle-office team must log into Fieldglass and update the VMS record for Placement PL-1010 with PO Number PO-CC-2024-4460 before generating the invoice. Confirm with the Cross Country Healthcare client contact or MSP coordinator that this PO is still active, covers the correct billing period, and has sufficient remaining balance to fund the $3,475.00 charge. Do not submit the invoice until the PO number is validated and reflected in the VMS record.","risk_level":"HIGH","escalation_note":"The assigned Middle-Office Reconciliation Specialist and the Cross Country Healthcare Account Manager must review this immediately. The Account Manager needs to contact the client's MSP or procurement contact at Cross Country Healthcare to confirm PO-CC-2024-4460 is valid and authorize its entry into Fieldglass, as only credentialed client-side or MSP users may have permission to attach or update PO numbers within the VMS platform."},{"placement_id":"PL-1011","candidate_name":"Priya Patel","vms_platform":"Beeline","client_name":"General Healthcare Resources","ats_state":"TX","ats_job_title":"RN - Tele","week_ending":"2026-03-21","match_status":"mismatch","confidence_score":0.45,"requires_human_review":true,"severity":"critical","discrepancies":["Hours mismatch: VMS=45.0h vs ATS=40.0h","OT hours mismatch: VMS=5.0h vs ATS=0.0h","Total amount mismatch: VMS=$4,706.75 vs ATS=$3,215.00 (diff=$1,491.75)"],"vms_snapshot":{"hours":45.0,"ot_hours":5.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":75.0,"total":4706.75,"po_number":"PO-GHR-2026-1192","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":75.0,"total":3215.0,"po_number":"PO-GHR-2026-1192","pay_rate":38.5},"financial_impact":1491.75,"name_similarity_score":100,"compliance_flags":["EXCESSIVE HOURS: 50.0 total hours in one week meets or exceeds 50h threshold \u2014 potential labor law violation. Requires supervisor approval before invoicing."],"llm_explanation":"The VMS (Beeline) record shows Priya Patel worked 45 regular hours and 5 OT hours for the week ending 2026-03-21, while the ATS/Bullhorn record only captures 40 regular hours and zero OT hours. This discrepancy of 5 hours regular and 5 hours OT results in a $1,491.75 billing gap, meaning the client would be under-invoiced if the ATS figures are used, or the candidate may be underpaid if the VMS-approved hours are not reflected internally.","recommended_action":"Middle-office must obtain the original approved timesheets from Beeline for PL-1011 and compare against any timecards or supervisor approvals in Bullhorn. If the VMS-approved 45/5 hours are confirmed correct by the client and timesheet documentation, update the Bullhorn record to match before generating the invoice. Do not invoice until both systems are reconciled and a revised internal record is signed off.","risk_level":"HIGH","escalation_note":"The assigned Recruiter and Account Manager for General Healthcare Resources must jointly review the approved Beeline timesheet and confirm with the client site supervisor whether Priya Patel worked the additional 5 hours and 5 OT hours. Payroll must also be looped in to ensure candidate compensation reflects the correct hours before the next payroll run. A $1,491.75 billing discrepancy on an approved VMS record carries direct revenue and compliance risk."},{"placement_id":"PL-1012","candidate_name":"Kevin O'Brien","vms_platform":"Fieldglass","client_name":"Cross Country Healthcare","ats_state":"FL","ats_job_title":"RN - ICU","week_ending":"2026-03-21","match_status":"match","confidence_score":1.0,"requires_human_review":false,"severity":"clean","discrepancies":[],"vms_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":92.0,"ot_rate":138.0,"per_diem":0.0,"total":3680.0,"po_number":"PO-CC-2024-4454","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":92.0,"ot_rate":138.0,"per_diem":0.0,"total":3680.0,"po_number":"PO-CC-2024-4454","pay_rate":45.0},"financial_impact":0.0,"name_similarity_score":88,"compliance_flags":[],"llm_explanation":"","recommended_action":"No action required \u2014 record cleared for processing.","risk_level":"LOW","escalation_note":""},{"placement_id":"PL-1013","candidate_name":"Amanda Foster","vms_platform":"AYA","client_name":"TRIO Workforce Solutions","ats_state":"CA","ats_job_title":"RN - ER","week_ending":"2026-03-21","match_status":"mismatch","confidence_score":0.55,"requires_human_review":true,"severity":"critical","discrepancies":["Hours mismatch: VMS=24.0h vs ATS=40.0h","Total amount mismatch: VMS=$2,380.00 vs ATS=$3,900.00 (diff=$1,520.00)"],"vms_snapshot":{"hours":24.0,"ot_hours":0.0,"bill_rate":95.0,"ot_rate":142.5,"per_diem":100.0,"total":2380.0,"po_number":"PO-TRIO-8824","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":95.0,"ot_rate":142.5,"per_diem":100.0,"total":3900.0,"po_number":"PO-TRIO-8824","pay_rate":47.0},"financial_impact":1520.0,"name_similarity_score":100,"compliance_flags":["CA DAILY OT RULE: California Labor Code requires overtime after 8 hours/day (not just 40h/week). VMS platform reports weekly totals only \u2014 cannot confirm daily OT was applied correctly. Manual verification required."],"llm_explanation":"The VMS platform (AYA) recorded 24.0 regular hours for Amanda Foster's week ending 2026-03-21, while the ATS/Bullhorn record shows 40.0 regular hours \u2014 a discrepancy of 16 hours. This creates a $1,520.00 billing gap, and invoicing at either figure without verification risks either overbilling the client (TRIO Workforce Solutions) or underpaying the candidate and leaving revenue on the table.","recommended_action":"Place this placement on billing hold immediately. Contact the client (TRIO Workforce Solutions) and/or the facility timekeeper to obtain the original approved timesheet for the week ending 2026-03-21, and cross-reference against Amanda Foster's shift schedule logged in Bullhorn. Once the correct hours are confirmed, update the discrepant system to match and obtain written approval before releasing the invoice against PO-TRIO-8824.","risk_level":"HIGH","escalation_note":"The assigned Middle-Office Reconciliation Specialist and the Account Manager overseeing the TRIO Workforce Solutions account must both review this record. The AM needs to engage the client contact directly to validate the approved hours, as the $1,520.00 discrepancy is material and cannot be resolved from internal records alone. If the candidate was genuinely scheduled for 40 hours, a VMS correction request must be submitted to AYA before invoicing proceeds."},{"placement_id":"PL-1014","candidate_name":"Daniel Lee","vms_platform":"Beeline","client_name":"General Healthcare Resources","ats_state":"TX","ats_job_title":"CNA","week_ending":"2026-03-21","match_status":"match","confidence_score":1.0,"requires_human_review":false,"severity":"clean","discrepancies":[],"vms_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":75.0,"total":3215.0,"po_number":"PO-GHR-2026-1193","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":75.0,"total":3215.0,"po_number":"PO-GHR-2026-1193","pay_rate":38.5},"financial_impact":0.0,"name_similarity_score":100,"compliance_flags":[],"llm_explanation":"","recommended_action":"No action required \u2014 record cleared for processing.","risk_level":"LOW","escalation_note":""},{"placement_id":"PL-1015","candidate_name":"Rachel Green","vms_platform":"Fieldglass","client_name":"Cross Country Healthcare","ats_state":"FL","ats_job_title":"RN - Med/Surg","week_ending":"2026-03-21","match_status":"match","confidence_score":1.0,"requires_human_review":false,"severity":"clean","discrepancies":[],"vms_snapshot":{"hours":40.0,"ot_hours":6.0,"bill_rate":85.0,"ot_rate":127.5,"per_diem":75.0,"total":4240.0,"po_number":"PO-CC-2024-4455","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":6.0,"bill_rate":85.0,"ot_rate":127.5,"per_diem":75.0,"total":4240.0,"po_number":"PO-CC-2024-4455","pay_rate":42.0},"financial_impact":0.0,"name_similarity_score":100,"compliance_flags":[],"llm_explanation":"","recommended_action":"No action required \u2014 record cleared for processing.","risk_level":"LOW","escalation_note":""},{"placement_id":"PL-1016","candidate_name":"Christopher Nguyen","vms_platform":"AYA","client_name":"TRIO Workforce Solutions","ats_state":"CA","ats_job_title":"RN - Tele","week_ending":"2026-03-21","match_status":"mismatch","confidence_score":0.75,"requires_human_review":true,"severity":"warning","discrepancies":["Name variation: VMS='Christopher Nguyen' vs ATS='Chris Nguyen' (similarity=80)","VMS status: Pending Approval \u2014 not yet approved for invoicing"],"vms_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":95.0,"ot_rate":142.5,"per_diem":100.0,"total":3900.0,"po_number":"PO-TRIO-8825","status":"Pending Approval"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":95.0,"ot_rate":142.5,"per_diem":100.0,"total":3900.0,"po_number":"PO-TRIO-8825","pay_rate":47.0},"financial_impact":0.0,"name_similarity_score":80,"compliance_flags":["CA DAILY OT RULE: California Labor Code requires overtime after 8 hours/day (not just 40h/week). VMS platform reports weekly totals only \u2014 cannot confirm daily OT was applied correctly. Manual verification required.","PENDING APPROVAL: VMS record not yet approved by hospital. Cannot invoice until hospital approves the timesheet."],"llm_explanation":"Two discrepancies have been flagged on this placement: the candidate's name appears as 'Christopher Nguyen' in the VMS (AYA) but as 'Chris Nguyen' in the ATS (Bullhorn), which could indicate a data entry inconsistency or potentially a mismatched candidate record. Additionally, the VMS timecard status is still 'Pending Approval,' meaning the client has not yet authorized the hours, and invoicing against unapproved time carries financial and contractual risk if the client later disputes or rejects the submission.","recommended_action":"First, confirm with the recruiting or onboarding team that 'Chris Nguyen' and 'Christopher Nguyen' refer to the same candidate by cross-referencing a government-issued ID, SSN, or employee ID on file, and update the name to be consistent across both systems. Second, do not proceed to invoicing until the VMS status in AYA changes from 'Pending Approval' to 'Approved'; follow up with the client contact at TRIO Workforce Solutions or the designated VMS approver to obtain timecard approval for the week ending 2026-03-21 under PO-TRIO-8825.","risk_level":"MEDIUM","escalation_note":"The middle-office reconciliation team should escalate the name discrepancy to the onboarding or credentialing coordinator to verify candidate identity, and the client services or account management representative handling the TRIO Workforce Solutions account should follow up directly with the client's VMS approver to expedite timecard approval before the invoicing cutoff."},{"placement_id":"PL-1017","candidate_name":"Michelle Adams","vms_platform":"Beeline","client_name":"General Healthcare Resources","ats_state":"TX","ats_job_title":"RN - Med/Surg","week_ending":"2026-03-21","match_status":"mismatch","confidence_score":0.6000000000000001,"requires_human_review":true,"severity":"warning","discrepancies":["Bill rate mismatch: VMS=$82.00/hr vs ATS=$78.50/hr (diff=$3.50)","OT rate mismatch: VMS=$123.00/hr vs ATS=$117.75/hr","Total amount mismatch: VMS=$3,649.00 vs ATS=$3,493.25 (diff=$155.75)"],"vms_snapshot":{"hours":40.0,"ot_hours":3.0,"bill_rate":82.0,"ot_rate":123.0,"per_diem":0.0,"total":3649.0,"po_number":"PO-GHR-2026-1194","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":3.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":0.0,"total":3493.25,"po_number":"PO-GHR-2026-1194","pay_rate":38.5},"financial_impact":155.75,"name_similarity_score":100,"compliance_flags":[],"llm_explanation":"The bill rate in Bullhorn ($78.50/hr) does not match the approved rate in Beeline ($82.00/hr), resulting in a $3.50/hr discrepancy that cascades into a $155.75 total invoice underbilling for this week. This suggests either the rate was updated in the VMS after the Bullhorn record was created, or the contract amendment was applied in Beeline but not reflected in the ATS. If invoiced at the ATS rate, the staffing agency would under-bill the client by $155.75 for this single week, with the risk compounding over the full assignment duration.","recommended_action":"Before invoicing, the middle-office team must pull the fully executed contract or rate card for Michelle Adams at General Healthcare Resources and confirm which rate ($78.50 or $82.00) is contractually authorized. If $82.00 is the correct approved rate, update the Bullhorn record to match and revalidate the total. If $78.50 is correct, initiate a rate correction request in Beeline and place the VMS approval on hold until the rate is corrected and re-approved by the client.","risk_level":"HIGH","escalation_note":"The Account Manager responsible for the General Healthcare Resources account must confirm the correct contractual bill rate and provide written authorization. Additionally, the Contracts/Credentialing team should verify whether a rate amendment was processed in Beeline without a corresponding update to Bullhorn. Do not invoice until rate alignment is confirmed in writing, as this discrepancy affects both current and potentially retroactive billing."},{"placement_id":"PL-1018","candidate_name":"Brian Wilson","vms_platform":"Fieldglass","client_name":"Cross Country Healthcare","ats_state":"NY","ats_job_title":"RN - Tele","week_ending":"2026-03-21","match_status":"mismatch","confidence_score":0.55,"requires_human_review":true,"severity":"critical","discrepancies":["Hours mismatch: VMS=53.0h vs ATS=40.0h","Total amount mismatch: VMS=$6,167.50 vs ATS=$5,057.50 (diff=$1,110.00)"],"vms_snapshot":{"hours":53.0,"ot_hours":13.0,"bill_rate":85.0,"ot_rate":127.5,"per_diem":0.0,"total":6167.5,"po_number":"PO-CC-2024-4456","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":13.0,"bill_rate":85.0,"ot_rate":127.5,"per_diem":0.0,"total":5057.5,"po_number":"PO-CC-2024-4456","pay_rate":42.0},"financial_impact":1110.0,"name_similarity_score":100,"compliance_flags":["EXCESSIVE HOURS: 66.0 total hours in one week meets or exceeds 50h threshold \u2014 potential labor law violation. Requires supervisor approval before invoicing."],"llm_explanation":"The VMS (Fieldglass) shows 53.0 regular hours while the ATS (Bullhorn) only records 40.0 regular hours, creating a 13-hour discrepancy in regular time that results in a $1,110.00 billing difference ($13 hours x $85.00/hr). This matters financially because invoicing at the VMS amount without ATS confirmation risks overbilling the client, while invoicing at the ATS amount risks underpaying the candidate and underbilling if the additional hours were legitimately worked.","recommended_action":"Middle-office must obtain the original approved timesheets from the VMS portal and cross-reference against the candidate's facility badge/clock-in records or supervisor sign-off to confirm whether Brian Wilson actually worked 53.0 or 40.0 regular hours during the week ending 2026-03-21. Bullhorn must be corrected to match verified hours before any invoice is generated against PO-CC-2024-4456.","risk_level":"HIGH","escalation_note":"This requires review by the assigned Account Manager for the Cross Country Healthcare account and the Payroll/Billing Coordinator to pull the approved VMS timesheet. If VMS shows client-approved 53.0 hours, Bullhorn must be updated by the recruiter or onboarding team. If the 13 extra regular hours are a data entry error in Fieldglass, the VMS Managed Services contact at Cross Country Healthcare must correct and re-approve prior to invoicing to avoid a disputed invoice."},{"placement_id":"PL-1019","candidate_name":"Stephanie Taylor","vms_platform":"Beeline","client_name":"General Healthcare Resources","ats_state":"TX","ats_job_title":"LPN","week_ending":"2026-03-21","match_status":"match","confidence_score":1.0,"requires_human_review":false,"severity":"clean","discrepancies":[],"vms_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":75.0,"total":3215.0,"po_number":"PO-GHR-2026-1195","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":78.5,"ot_rate":117.75,"per_diem":75.0,"total":3215.0,"po_number":"PO-GHR-2026-1195","pay_rate":38.5},"financial_impact":0.0,"name_similarity_score":100,"compliance_flags":[],"llm_explanation":"","recommended_action":"No action required \u2014 record cleared for processing.","risk_level":"LOW","escalation_note":""},{"placement_id":"PL-1020","candidate_name":"Ryan Jackson","vms_platform":"AYA","client_name":"TRIO Workforce Solutions","ats_state":"CA","ats_job_title":"RN - ER","week_ending":"2026-03-21","match_status":"match","confidence_score":1.0,"requires_human_review":true,"severity":"warning","discrepancies":[],"vms_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":95.0,"ot_rate":142.5,"per_diem":100.0,"total":3900.0,"po_number":"PO-TRIO-8826","status":"Approved"},"ats_snapshot":{"hours":40.0,"ot_hours":0.0,"bill_rate":95.0,"ot_rate":142.5,"per_diem":100.0,"total":3900.0,"po_number":"PO-TRIO-8826","pay_rate":47.0},"financial_impact":0.0,"name_similarity_score":100,"compliance_flags":["CA DAILY OT RULE: California Labor Code requires overtime after 8 hours/day (not just 40h/week). VMS platform reports weekly totals only \u2014 cannot confirm daily OT was applied correctly. Manual verification required."],"llm_explanation":"Compliance rule triggered: CA DAILY OT RULE: California Labor Code requires overtime after 8 hours/day (not just 40h/week). VMS platform reports weekly totals only \u2014 cannot confirm daily OT was applied correctly. Manual verification required.","recommended_action":"Review the compliance flags for this record and resolve before invoicing.","risk_level":"MEDIUM","escalation_note":"Middle-office lead should review compliance flags."}]/*__RECON_DATA_END__*/;
+
+  // ── STATE ─────────────────────────────────────────────────────────────────
+  let selectedId = null;
+  const decisions = {};  // pid -> "Approved" | "Sent Back" | "Escalated"
+
+  // ── FILE LOAD ──────────────────────────────────────────────────────────────
+  document.getElementById("fileInput").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        DATA = Array.isArray(parsed) ? parsed : (parsed.records || []);
+        Object.keys(decisions).forEach(k => delete decisions[k]);
+        selectedId = null;
+        render();
+        showToast("Loaded " + DATA.length + " records from " + file.name);
+      } catch {
+        showToast("Could not read file — check it is a valid JSON results file");
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // ── HELPERS ───────────────────────────────────────────────────────────────
+  const fmt$ = v => "$" + Number(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtH = v => Number(v).toFixed(1) + "h";
+  const fmtR = v => "$" + Number(v).toFixed(2) + "/hr";
+
+  function fmtDate(s) {
+    try { return new Date(s + "T00:00:00").toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}); }
+    catch { return s; }
+  }
+
+  function confLevel(score) {
+    if (score >= 0.85) return {label:"High",cls:"high",color:"#16a34a"};
+    if (score >= 0.65) return {label:"Medium",cls:"medium",color:"#d97706"};
+    if (score >= 0.50) return {label:"Low",cls:"low",color:"#ea580c"};
+    return {label:"Very Low",cls:"verylow",color:"#dc2626"};
+  }
+
+  function statusMeta(r) {
+    if (r.match_status === "missing") return {label:"Timesheet Missing",cls:"missing",icon:"⊘",bannerIcon:"📋"};
+    if (r.severity === "critical")    return {label:"Action Required",cls:"critical",icon:"●",bannerIcon:"⚠️"};
+    if (r.severity === "warning")     return {label:"Needs Attention",cls:"warning",icon:"●",bannerIcon:"⚠️"};
+    return {label:"Cleared",cls:"clean",icon:"✓",bannerIcon:"✓"};
+  }
+
+  function humanDisc(s) {
+    return s
+      .replace(/VMS=/g,"Hospital: ").replace(/ATS=/g,"Bullhorn: ")
+      .replace(/Hours mismatch: /,"Regular hours don\'t match — ")
+      .replace(/OT hours mismatch: /,"Overtime hours don\'t match — ")
+      .replace(/Bill rate mismatch: /,"Billing rate doesn\'t match — ")
+      .replace(/OT rate mismatch: /,"Overtime rate doesn\'t match — ")
+      .replace(/Per diem mismatch: /,"Daily allowance (per diem) doesn\'t match — ")
+      .replace(/Total amount mismatch: /,"Invoice total doesn\'t match — ")
+      .replace("Missing PO number on VMS record","Purchase order number is missing from the hospital\'s system")
+      .replace(/PO number mismatch: /,"Purchase order numbers don\'t match — ")
+      .replace(/Name variation: /,"Name is spelled differently in each system — ")
+      .replace("VMS status: Pending Approval — not yet approved for invoicing","Hospital has not yet approved the timesheet")
+      .replace("VMS status: Missing Timesheet — no approved timesheet in VMS","No timesheet was submitted through the hospital\'s system")
+      .replace(/Client name mismatch after alias resolution: /,"Client name differs between systems — ");
+  }
+
+  function humanCompliance(s) {
+    if (s.includes("CA DAILY OT RULE"))
+      return {icon:"⚖️", text:"California law requires overtime to be calculated daily (after 8 hours/day), not just weekly. The hospital\'s system only reports weekly totals, so daily overtime can\'t be confirmed automatically. A manual check of the daily timesheet is needed before invoicing."};
+    const mH = s.match(/(\d+\.?\d*) total hours/);
+    if (s.includes("EXCESSIVE HOURS"))
+      return {icon:"⏰", text:"This worker logged " + (mH ? mH[1] : "50+") + " hours in a single week, which is unusually high and may trigger labor law requirements. A supervisor must review and approve this before you can send the invoice."};
+    if (s.includes("MISSING TIMESHEET"))
+      return {icon:"📋", text:"The worker has not submitted their timesheet through the hospital\'s system. Neither payroll nor invoicing can proceed until the timesheet is submitted and approved."};
+    if (s.includes("PENDING APPROVAL"))
+      return {icon:"⏳", text:"The hospital has not yet signed off on this timesheet. You cannot invoice the hospital until they approve it in their system."};
+    return {icon:"⚠️", text:s};
+  }
+
+  function oneLineSummary(r) {
+    if (r.match_status === "missing") return "No timesheet submitted";
+    if (!r.discrepancies || r.discrepancies.length === 0) {
+      if (r.compliance_flags && r.compliance_flags.length > 0) return "Compliance review needed";
+      return "All records match";
+    }
+    const d = r.discrepancies[0];
+    const mH = d.match(/VMS=([\d.]+)h vs ATS=([\d.]+)h/);
+    if (mH) return "Hours: hospital " + mH[1] + "h, we have " + mH[2] + "h";
+    if (d.includes("Bill rate")) return "Billing rate doesn\'t match";
+    if (d.includes("OT rate")) return "Overtime rate doesn\'t match";
+    const mD = d.match(/diff=\$(\S+)\)/);
+    if (mD) return "$" + mD[1] + " total discrepancy";
+    if (d.includes("Missing PO")) return "Purchase order missing";
+    if (d.includes("Pending Approval")) return "Awaiting hospital approval";
+    if (d.includes("Name variation")) return "Name spelled differently";
+    return r.discrepancies.length + " issue" + (r.discrepancies.length > 1 ? "s" : "") + " found";
+  }
+
+  function generateWhatHappened(r) {
+    const llm = r.llm_explanation || "";
+    if (llm && !llm.includes("LLM reasoning unavailable")) return llm;
+    if (r.match_status === "missing")
+      return r.candidate_name + " has an active placement in Bullhorn but no timesheet has been submitted through the hospital\'s system (" + r.vms_platform + "). Payroll cannot be processed and the hospital cannot be invoiced until the worker submits their hours and the hospital approves them.";
+    const d = r.discrepancies || [];
+    if (d.length === 0 && r.compliance_flags && r.compliance_flags.length > 0)
+      return r.llm_explanation || "All data fields match, but this record has been flagged for compliance review. See the compliance notices below.";
+    if (d.length === 0) return "All fields in the hospital\'s system match our records in Bullhorn. This record is cleared and ready to process.";
+    const v = r.vms_snapshot, a = r.ats_snapshot;
+    const parts = [];
+    if (Math.abs(v.hours - a.hours) > 0) parts.push("the hospital reported " + v.hours + " regular hours but our Bullhorn record shows " + a.hours + " hours");
+    if (Math.abs(v.bill_rate - a.bill_rate) > 0.01) parts.push("the billing rate is " + fmt$(v.bill_rate) + "/hr in the hospital\'s system vs " + fmt$(a.bill_rate) + "/hr in our records");
+    if (Math.abs(v.ot_rate - a.ot_rate) > 0.01) parts.push("the overtime rate doesn\'t match (" + fmt$(v.ot_rate) + " vs " + fmt$(a.ot_rate) + ")");
+    if (v.po_number === "MISSING") parts.push("the purchase order number is missing from the hospital\'s system");
+    if (r.financial_impact > 0) parts.push("creating a " + fmt$(r.financial_impact) + " discrepancy that must be resolved before " + r.candidate_name + " can be paid and the hospital billed");
+    if (parts.length > 0) return "There is a discrepancy for " + r.candidate_name + ": " + parts.join("; ") + ".";
+    return "This record has " + d.length + " discrepancy(ies) that need to be reviewed.";
+  }
+
+  function getWeek() {
+    const weeks = [...new Set(DATA.map(r => r.week_ending).filter(Boolean))];
+    return weeks[0] || "";
+  }
+
+  // ── RENDER TOP BAR ────────────────────────────────────────────────────────
+  function renderTopBar() {
+    const critical = DATA.filter(r => r.severity === "critical").length;
+    const warning  = DATA.filter(r => r.severity === "warning").length;
+    const clean    = DATA.filter(r => r.severity === "clean").length;
+    const missing  = DATA.filter(r => r.match_status === "missing").length;
+    const atRisk   = DATA.filter(r => r.requires_human_review).reduce((s,r) => s + (r.financial_impact||0), 0);
+    const chips = document.getElementById("statChips");
+    chips.innerHTML = [
+      critical ? `<span class="chip red">${critical} action required</span>` : "",
+      warning  ? `<span class="chip amber">${warning} need attention</span>` : "",
+      missing  ? `<span class="chip blue">${missing} missing timesheet</span>` : "",
+      clean    ? `<span class="chip green">${clean} cleared</span>` : "",
+      atRisk   ? `<span class="chip gray">${fmt$(atRisk)} at risk</span>` : "",
+    ].join("");
+    document.getElementById("weekLabel").textContent = "Week ending " + fmtDate(getWeek());
+    const reviewed = Object.keys(decisions).length;
+    const needReview = DATA.filter(r => r.requires_human_review).length;
+    document.getElementById("progressLabel").textContent = reviewed + " of " + needReview + " reviewed";
+  }
+
+  // ── RENDER QUEUE ──────────────────────────────────────────────────────────
+  function sortedData() {
+    const order = {critical:0,warning:1,missing:2,clean:3};
+    return [...DATA].sort((a,b) => {
+      const ao = order[a.severity] ?? (a.match_status==="missing"?2:9);
+      const bo = order[b.severity] ?? (b.match_status==="missing"?2:9);
+      return ao - bo || a.placement_id.localeCompare(b.placement_id);
+    });
+  }
+
+  function renderQueue() {
+    const q = document.getElementById("queue");
+    q.innerHTML = "";
+    const sorted = sortedData();
+    const flagged = sorted.filter(r => r.requires_human_review || r.match_status==="missing");
+    const cleared = sorted.filter(r => !r.requires_human_review && r.match_status!=="missing");
+
+    const makeCard = r => {
+      const sm = statusMeta(r);
+      const dec = decisions[r.placement_id];
+      const isActive = r.placement_id === selectedId;
+      const activeCls = isActive ? (sm.cls==="critical"?"active-red":sm.cls==="warning"?"active-amber":sm.cls==="clean"?"active-green":"active") : "";
+      const div = document.createElement("div");
+      div.className = "qcard " + activeCls;
+      div.dataset.id = r.placement_id;
+      div.innerHTML = `
+        <div class="qname">${r.candidate_name}</div>
+        <div class="qrole">${r.ats_job_title} &nbsp;·&nbsp; ${r.client_name}</div>
+        <span class="status-pill ${sm.cls}">${sm.icon} ${sm.label}</span>
+        ${r.financial_impact > 0 ? `<div class="qmoney" style="color:${sm.cls==="clean"?"#16a34a":"#dc2626"}">${fmt$(r.financial_impact)} at risk</div>` : ""}
+        ${r.requires_human_review ? `<div class="qissue">${oneLineSummary(r)}</div>` : ""}
+        ${dec ? `<div class="qdecision">✓ ${dec}</div>` : ""}
+      `;
+      div.onclick = () => { selectedId = r.placement_id; renderQueue(); renderDetail(); };
+      return div;
+    };
+
+    if (flagged.length) {
+      const s1 = document.createElement("div"); s1.className = "queue-section";
+      const t1 = document.createElement("div"); t1.className = "queue-section-title";
+      t1.textContent = "Needs Review (" + flagged.length + ")";
+      s1.appendChild(t1);
+      flagged.forEach(r => s1.appendChild(makeCard(r)));
+      q.appendChild(s1);
+    }
+    if (cleared.length) {
+      const s2 = document.createElement("div"); s2.className = "queue-section";
+      const t2 = document.createElement("div"); t2.className = "queue-section-title";
+      t2.textContent = "Cleared (" + cleared.length + ")";
+      s2.appendChild(t2);
+      cleared.forEach(r => s2.appendChild(makeCard(r)));
+      q.appendChild(s2);
+    }
+  }
+
+  // ── RENDER DETAIL ─────────────────────────────────────────────────────────
+  function renderDetail() {
+    const d = document.getElementById("detail");
+    const r = DATA.find(x => x.placement_id === selectedId);
+    if (!r) { d.innerHTML = `<div class="detail-placeholder">Select a record from the list on the left to review it.</div>`; return; }
+
+    const sm = statusMeta(r);
+    const v = r.vms_snapshot, a = r.ats_snapshot;
+    const conf = confLevel(r.confidence_score);
+    const dec = decisions[r.placement_id];
+
+    // Banner text
+    let bannerSub = "";
+    if (r.match_status === "missing") bannerSub = "Worker has not submitted hours through the hospital\'s system. Cannot pay worker or invoice hospital.";
+    else if (r.severity === "critical") bannerSub = fmt$(r.financial_impact) + " cannot be invoiced until these issues are resolved.";
+    else if (r.severity === "warning") bannerSub = fmt$(r.financial_impact > 0 ? r.financial_impact : 0) + " may be affected. Review before processing.";
+    else bannerSub = "All records match. Total: " + fmt$(v.total) + ". Ready to invoice.";
+
+    // Comparison table rows
+    const cmpRows = [
+      ["Regular Hours",    fmtH(v.hours),    fmtH(a.hours),    Math.abs(v.hours-a.hours)>0,       "h"],
+      ["Overtime Hours",   fmtH(v.ot_hours), fmtH(a.ot_hours), Math.abs(v.ot_hours-a.ot_hours)>0, "h"],
+      ["Billing Rate",     fmtR(v.bill_rate),fmtR(a.bill_rate),Math.abs(v.bill_rate-a.bill_rate)>0.01,"/hr"],
+      ["Overtime Rate",    fmtR(v.ot_rate),  fmtR(a.ot_rate),  Math.abs(v.ot_rate-a.ot_rate)>0.01,  "/hr"],
+      ["Daily Allowance",  fmt$(v.per_diem), fmt$(a.per_diem), Math.abs(v.per_diem-a.per_diem)>0.01,""],
+      ["Total Amount",     fmt$(v.total),    fmt$(a.total),    Math.abs(v.total-a.total)>0.01,       ""],
+      ["Purchase Order",   v.po_number,      a.po_number,      v.po_number !== a.po_number,         ""],
+      ["Approval Status",  v.status,         "Active in Bullhorn", false, ""],
+    ];
+
+    const tableBody = cmpRows.map(([label, vVal, aVal, isDiff]) => {
+      const icon = isDiff ? `<span class="diff-badge">Mismatch</span>` : `<span class="ok-badge">✓</span>`;
+      return `<tr class="${isDiff?"diff":""}"><td>${label}</td><td>${vVal}</td><td>${aVal}</td><td>${icon}</td></tr>`;
+    }).join("");
+
+    // Discrepancies
+    const discHtml = (r.discrepancies||[]).length === 0
+      ? `<div class="disc-none">✓ No discrepancies found — all fields match.</div>`
+      : (r.discrepancies||[]).map(d => `<div class="disc-item"><span class="disc-icon">⚠</span><span>${humanDisc(d)}</span></div>`).join("");
+
+    // Compliance
+    const compHtml = (r.compliance_flags||[]).length === 0
+      ? `<p class="comp-none">No compliance notices for this placement.</p>`
+      : (r.compliance_flags||[]).map(f => {
+          const h = humanCompliance(f);
+          return `<div class="comp-item"><span class="comp-icon">${h.icon}</span><span>${h.text}</span></div>`;
+        }).join("");
+
+    // What to do
+    const whatToDo = (r.recommended_action && !r.recommended_action.includes("No action required"))
+      ? r.recommended_action
+      : (r.requires_human_review
+          ? ((r.discrepancies||[]).length === 0 && (r.compliance_flags||[]).length > 0
+              ? "Review the compliance notices below and verify that all requirements are met before approving for payroll and invoicing."
+              : "Review the discrepancies below and verify the correct values with the hospital and/or the worker before approving for payroll and invoicing.")
+          : "No action needed. This record is cleared and can be processed for payroll and invoicing.");
+
+    const escNote = r.escalation_note && !r.escalation_note.includes("lead should review") ? r.escalation_note : "";
+
+    d.innerHTML = `
+      <div class="rec-header">
+        <h1>${r.candidate_name}</h1>
+        <div class="rec-meta">
+          <span>${r.ats_job_title}</span>
+          <span>${r.client_name}</span>
+          <span>${r.ats_state}</span>
+          <span>Hospital system: ${r.vms_platform}</span>
+          <span>Week ending ${fmtDate(r.week_ending)}</span>
+        </div>
+      </div>
+
+      <div class="banner ${sm.cls}">
+        <span class="banner-icon">${sm.bannerIcon}</span>
+        <div class="banner-body">
+          <div class="banner-title ${sm.cls}">${sm.label.toUpperCase()}</div>
+          <div class="banner-sub">${bannerSub}</div>
+        </div>
+        ${dec ? `<span class="status-pill clean" style="margin-left:auto">✓ ${dec}</span>` : ""}
+      </div>
+
+      <div class="section">
+        <div class="section-h"><span class="icon">💬</span> What the AI found</div>
+        <p>${generateWhatHappened(r)}</p>
+      </div>
+
+      <div class="section">
+        <div class="section-h"><span class="icon">✅</span> What you need to do</div>
+        <p>${whatToDo}</p>
+        ${escNote ? `<p style="margin-top:8px;color:var(--muted);font-size:13px">Escalation note: ${escNote}</p>` : ""}
+      </div>
+
+      <div class="section">
+        <div class="section-h"><span class="icon">🔢</span> Hours &amp; Pay Comparison</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Rows highlighted in yellow have a mismatch between the hospital\'s system and our Bullhorn records.</p>
+        <table class="cmp-table">
+          <thead><tr><th>Field</th><th>Hospital (${r.vms_platform})</th><th>Our Records (Bullhorn)</th><th></th></tr></thead>
+          <tbody>${tableBody}</tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <div class="section-h"><span class="icon">⚠️</span> Discrepancies Found</div>
+        <div class="disc-list">${discHtml}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-h"><span class="icon">⚖️</span> Compliance Notices</div>
+        ${compHtml}
+      </div>
+
+      <div class="section">
+        <div class="section-h"><span class="icon">🤖</span> AI Match Confidence</div>
+        <div class="confidence-row">
+          <div class="conf-bar-wrap"><div class="conf-bar" style="width:${Math.round(r.confidence_score*100)}%;background:${conf.color}"></div></div>
+          <span class="conf-label ${conf.cls}">${conf.label}</span>
+          <span style="font-size:12px;color:var(--muted)">(${Math.round(r.confidence_score*100)}%) — how confident the system is that this record is correct</span>
+        </div>
+      </div>
+
+      ${r.requires_human_review ? `
+      <div class="section">
+        <div class="section-h"><span class="icon">📋</span> Your Decision</div>
+        <p style="margin-bottom:12px;color:var(--muted)">After reviewing the information above, choose one of the following actions. Your decision will be recorded.</p>
+        <div class="action-row">
+          <button class="btn btn-approve" data-act="Approved">✓ Approve — Clear for payroll &amp; invoicing</button>
+          <button class="btn btn-reject" data-act="Sent Back">✗ Send Back — Return for correction</button>
+          <button class="btn btn-escalate" data-act="Escalated">⏸ Escalate — Flag for supervisor review</button>
+        </div>
+      </div>` : `
+      <div class="section">
+        <div class="section-h"><span class="icon">📋</span> Status</div>
+        <p class="muted">This record does not require human review. It was automatically cleared by the system.</p>
+      </div>`}
+    `;
+
+    d.querySelectorAll(".btn").forEach(btn => {
+      btn.onclick = () => {
+        const act = btn.dataset.act;
+        decisions[r.placement_id] = act;
+        showToast(r.candidate_name + ": " + act);
+        renderTopBar();
+        renderQueue();
+        renderDetail();
+      };
+    });
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2800);
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────────
+  function render() {
+    renderTopBar();
+    renderQueue();
+    renderDetail();
+  }
+
+  selectedId = sortedData().find(r => r.requires_human_review)?.placement_id || sortedData()[0]?.placement_id || null;
+  render();
+  </script>
+</body>
+</html>

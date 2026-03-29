@@ -1,0 +1,21 @@
+placement_id,candidate_name,client_name,vms_platform,vms_hours,vms_bill_rate,vms_ot_hours,vms_ot_rate,vms_per_diem,vms_total,vms_po_number,vms_period_end,vms_status
+PL-1001,Maria Santos,Cross Country Healthcare,Fieldglass,40.0,85.00,0,127.50,75.00,3475.00,PO-CC-2024-4451,2026-03-21,Approved
+PL-1002,James Wright,Cross Country Healthcare,Fieldglass,36.0,92.00,4,138.00,0.00,3864.00,PO-CC-2024-4452,2026-03-21,Approved
+PL-1003,Sarah Chen,GHR - General Healthcare,Beeline,40.0,78.50,8,117.75,75.00,4517.00,PO-GHR-2026-1189,2026-03-21,Approved
+PL-1004,Robert Kim,GHR - General Healthcare,Beeline,32.0,78.50,0,117.75,75.00,2887.00,PO-GHR-2026-1190,2026-03-21,Approved
+PL-1005,Angela Davis,TRIO Workforce,AYA,38.0,95.00,2,142.50,100.00,3995.00,PO-TRIO-8821,2026-03-21,Approved
+PL-1006,David Park,TRIO Workforce,AYA,40.0,95.00,0,142.50,100.00,3900.00,PO-TRIO-8822,2026-03-21,Approved
+PL-1007,Jennifer Martinez,Cross Country Healthcare,Fieldglass,40.0,110.00,12,165.00,0.00,6380.00,PO-CC-2024-4453,2026-03-21,Approved
+PL-1008,Michael Thompson,GHR - General Healthcare,Beeline,0.0,78.50,0,117.75,0.00,0.00,PO-GHR-2026-1191,2026-03-21,Missing Timesheet
+PL-1009,Lisa Wang,TRIO Workforce,AYA,40.0,88.00,0,132.00,75.00,3595.00,PO-TRIO-8823,2026-03-21,Approved
+PL-1010,Thomas Brown,Cross Country Healthcare,Fieldglass,40.0,85.00,0,127.50,75.00,3475.00,,2026-03-21,Approved
+PL-1011,Priya Patel,GHR - General Healthcare,Beeline,45.0,78.50,5,117.75,75.00,4706.75,PO-GHR-2026-1192,2026-03-21,Approved
+PL-1012,Kevin O'Brien,Cross Country Healthcare,Fieldglass,40.0,92.00,0,138.00,0.00,3680.00,PO-CC-2024-4454,2026-03-21,Approved
+PL-1013,Amanda Foster,TRIO Workforce,AYA,24.0,95.00,0,142.50,100.00,2380.00,PO-TRIO-8824,2026-03-21,Approved
+PL-1014,Daniel Lee,GHR - General Healthcare,Beeline,40.0,78.50,0,117.75,75.00,3215.00,PO-GHR-2026-1193,2026-03-21,Approved
+PL-1015,Rachel Green,Cross Country Healthcare,Fieldglass,40.0,85.00,6,127.50,75.00,4240.00,PO-CC-2024-4455,2026-03-21,Approved
+PL-1016,Christopher Nguyen,TRIO Workforce,AYA,40.0,95.00,0,142.50,100.00,3900.00,PO-TRIO-8825,2026-03-21,Pending Approval
+PL-1017,Michelle Adams,GHR - General Healthcare,Beeline,40.0,82.00,3,123.00,0.00,3649.00,PO-GHR-2026-1194,2026-03-21,Approved
+PL-1018,Brian Wilson,Cross Country Healthcare,Fieldglass,53.0,85.00,13,127.50,0.00,6167.50,PO-CC-2024-4456,2026-03-21,Approved
+PL-1019,Stephanie Taylor,GHR - General Healthcare,Beeline,40.0,78.50,0,117.75,75.00,3215.00,PO-GHR-2026-1195,2026-03-21,Approved
+PL-1020,Ryan Jackson,TRIO Workforce,AYA,40.0,95.00,0,142.50,100.00,3900.00,PO-TRIO-8826,2026-03-21,Approved

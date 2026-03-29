@@ -1,0 +1,21 @@
+placement_id,candidate_name,client_name,ats_hours,ats_bill_rate,ats_ot_hours,ats_ot_rate,ats_per_diem,ats_total,ats_pay_rate,ats_po_number,ats_period_end,ats_status,ats_state,ats_job_title
+PL-1001,Maria Santos,Cross Country Healthcare,40.0,85.00,0,127.50,75.00,3475.00,42.00,PO-CC-2024-4451,2026-03-21,Active,FL,RN - Med/Surg
+PL-1002,James Wright,Cross Country Healthcare,40.0,92.00,0,138.00,0.00,3680.00,45.00,PO-CC-2024-4452,2026-03-21,Active,FL,RN - ICU
+PL-1003,Sarah Chen,General Healthcare Resources,40.0,78.50,8,117.75,75.00,4517.00,38.50,PO-GHR-2026-1189,2026-03-21,Active,TX,LPN
+PL-1004,Robert Kim,General Healthcare Resources,40.0,78.50,0,117.75,75.00,3215.00,38.50,PO-GHR-2026-1190,2026-03-21,Active,TX,LPN
+PL-1005,Angela M. Davis,TRIO Workforce Solutions,40.0,95.00,0,142.50,100.00,3900.00,47.00,PO-TRIO-8821,2026-03-21,Active,CA,RN - ER
+PL-1006,David Park,TRIO Workforce Solutions,40.0,95.00,0,142.50,100.00,3900.00,47.00,PO-TRIO-8822,2026-03-21,Active,CA,RN - ER
+PL-1007,Jennifer Martinez,Cross Country Healthcare,40.0,105.00,12,157.50,0.00,6090.00,52.00,PO-CC-2024-4453,2026-03-21,Active,NY,RN - OR
+PL-1008,Michael Thompson,General Healthcare Resources,40.0,78.50,0,117.75,0.00,3140.00,38.50,PO-GHR-2026-1191,2026-03-21,Active,TX,CNA
+PL-1009,Lisa Wang,TRIO Workforce Solutions,40.0,88.00,0,132.00,75.00,3595.00,43.00,PO-TRIO-8823,2026-03-21,Active,CA,LVN
+PL-1010,Thomas Brown,Cross Country Healthcare,40.0,85.00,0,127.50,75.00,3475.00,42.00,PO-CC-2024-4460,2026-03-21,Active,FL,RN - Med/Surg
+PL-1011,Priya Patel,General Healthcare Resources,40.0,78.50,0,117.75,75.00,3215.00,38.50,PO-GHR-2026-1192,2026-03-21,Active,TX,RN - Tele
+PL-1012,Kevin Obrien,Cross Country Healthcare,40.0,92.00,0,138.00,0.00,3680.00,45.00,PO-CC-2024-4454,2026-03-21,Active,FL,RN - ICU
+PL-1013,Amanda Foster,TRIO Workforce Solutions,40.0,95.00,0,142.50,100.00,3900.00,47.00,PO-TRIO-8824,2026-03-21,Active,CA,RN - ER
+PL-1014,Daniel Lee,General Healthcare Resources,40.0,78.50,0,117.75,75.00,3215.00,38.50,PO-GHR-2026-1193,2026-03-21,Active,TX,CNA
+PL-1015,Rachel Green,Cross Country Healthcare,40.0,85.00,6,127.50,75.00,4240.00,42.00,PO-CC-2024-4455,2026-03-21,Active,FL,RN - Med/Surg
+PL-1016,Chris Nguyen,TRIO Workforce Solutions,40.0,95.00,0,142.50,100.00,3900.00,47.00,PO-TRIO-8825,2026-03-21,Active,CA,RN - Tele
+PL-1017,Michelle Adams,General Healthcare Resources,40.0,78.50,3,117.75,0.00,3493.25,38.50,PO-GHR-2026-1194,2026-03-21,Active,TX,RN - Med/Surg
+PL-1018,Brian Wilson,Cross Country Healthcare,40.0,85.00,13,127.50,0.00,5057.50,42.00,PO-CC-2024-4456,2026-03-21,Active,NY,RN - Tele
+PL-1019,Stephanie Taylor,General Healthcare Resources,40.0,78.50,0,117.75,75.00,3215.00,38.50,PO-GHR-2026-1195,2026-03-21,Active,TX,LPN
+PL-1020,Ryan Jackson,TRIO Workforce Solutions,40.0,95.00,0,142.50,100.00,3900.00,47.00,PO-TRIO-8826,2026-03-21,Active,CA,RN - ER
